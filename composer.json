@@ -1,0 +1,18 @@
+{
+    "name": "melody-wen/laravel-custom-auth",
+    "description": "自定义用户认证框架",
+    "authors": [
+        {
+            "name": "mr wen",
+            "email": "604989282@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "MelodyWen\\LaravelCustomAuth\\": "src"
+        }
+    }
+}
