@@ -32,7 +32,7 @@ class CustomAuthServiceProvider extends ServiceProvider
          */
         Auth::extend('custom-guard', function ($app, $name, array $config) {
             // 返回一个 Illuminate\Contracts\Auth\Guard 实例...
-            return new CustomGuard(Auth::createUserProvider($config['provider']));
+            return new CustomGuard(Auth::createUserProvider($config['provider']), request(), $config);
         });
     }
 

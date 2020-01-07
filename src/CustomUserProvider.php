@@ -54,6 +54,7 @@ class CustomUserProvider implements UserProvider{
     public function retrieveByCredentials(array $credentials)
     {
         // TODO: Implement retrieveByCredentials() method.
+
     }
 
     /**

@@ -2,38 +2,59 @@
 
 namespace MelodyWen\LaravelCustomAuth;
 
+use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
+use Illuminate\Http\Request;
 
+/***
+ * Class CustomGuard
+ *  note ： 此类全部参考 \Illuminate\Auth\TokenGuard 这类 ，仅仅只是改动了 __construct 方法
+ * @package MelodyWen\LaravelCustomAuth
+ */
 class CustomGuard implements Guard
 {
-    public $userProvider;
-
-    public function __construct(UserProvider $userProvider)
-    {
-        $this->userProvider= $userProvider;
-    }
+    use GuardHelpers;
 
     /**
-     * Determine if the current user is authenticated.
+     * The request instance.
      *
-     * @return bool
+     * @var \Illuminate\Http\Request
      */
-    public function check()
-    {
-        // TODO: Implement check() method.
-
-    }
+    protected $request;
 
     /**
-     * Determine if the current user is a guest.
+     * The name of the query string item from the request containing the API token.
      *
-     * @return bool
+     * @var string
      */
-    public function guest()
+    protected $inputKey;
+
+    /**
+     * The name of the token "column" in persistent storage.
+     *
+     * @var string
+     */
+    protected $storageKey;
+
+
+    /**
+     * CustomGuard constructor.
+     * @param UserProvider $provider
+     * @param Request $request
+     * @param array $config
+     */
+    public function __construct(UserProvider $provider, Request $request, $config = [])
     {
-        // TODO: Implement guest() method.
+        $this->request = $request;
+        $this->provider = $provider;
+
+        $config = optional($config);
+        // 设置 request请求中的 token 字段名称
+        $this->inputKey = $config['inputKey'] ?: 'api_token';
+        // 设置 user provider 中对应的 token 字段名称
+        $this->storageKey = $config['storageKey'] ?: 'api_token';
     }
 
     /**
@@ -43,18 +64,48 @@ class CustomGuard implements Guard
      */
     public function user()
     {
-        // TODO: Implement user() method.
+        // If we've already retrieved the user for the current request we can just
+        // return it back immediately. We do not want to fetch the user data on
+        // every call to this method because that would be tremendously slow.
+        if (!is_null($this->user)) {
+            return $this->user;
+        }
 
+        $user = null;
+
+        $token = $this->getTokenForRequest();
+
+        if (!empty($token)) {
+            $user = $this->provider->retrieveByCredentials(
+                [$this->storageKey => $token]
+            );
+        }
+
+        return $this->user = $user;
     }
 
     /**
-     * Get the ID for the currently authenticated user.
+     * Get the token for the current request.
      *
-     * @return int|null
+     * @return string
      */
-    public function id()
+    public function getTokenForRequest()
     {
-        // TODO: Implement id() method.
+        $token = $this->request->query($this->inputKey);
+
+        if (empty($token)) {
+            $token = $this->request->input($this->inputKey);
+        }
+
+        if (empty($token)) {
+            $token = $this->request->bearerToken();
+        }
+
+        if (empty($token)) {
+            $token = $this->request->getPassword();
+        }
+
+        return $token;
     }
 
     /**
@@ -65,17 +116,29 @@ class CustomGuard implements Guard
      */
     public function validate(array $credentials = [])
     {
-        // TODO: Implement validate() method.
+        if (empty($credentials[$this->inputKey])) {
+            return false;
+        }
+
+        $credentials = [$this->storageKey => $credentials[$this->inputKey]];
+
+        if ($this->provider->retrieveByCredentials($credentials)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * Set the current user.
+     * Set the current request instance.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable $user
-     * @return void
+     * @param  \Illuminate\Http\Request $request
+     * @return $this
      */
-    public function setUser(Authenticatable $user)
+    public function setRequest(Request $request)
     {
-        // TODO: Implement setUser() method.
+        $this->request = $request;
+
+        return $this;
     }
 }
