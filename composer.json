@@ -14,5 +14,15 @@
         "psr-4": {
             "MelodyWen\\LaravelCustomAuth\\": "src"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MelodyWen\\LaravelCustomAuth\\CustomAuthServiceProvider"
+            ],
+            "aliases": {
+
+            }
+        }
     }
 }
